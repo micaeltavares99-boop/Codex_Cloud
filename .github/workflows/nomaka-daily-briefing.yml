@@ -1,0 +1,43 @@
+name: Nomaka Daily Briefing
+
+on:
+  schedule:
+    - cron: "5 7 * * *"
+    - cron: "5 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nomaka-daily-briefing
+  cancel-in-progress: false
+
+jobs:
+  send-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r briefings/nomaka-daily/requirements.txt
+
+      - name: Generate and send briefing
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          BRIEFING_TO: ${{ secrets.BRIEFING_TO }}
+          BRIEFING_CC: ${{ secrets.BRIEFING_CC }}
+        run: python briefings/nomaka-daily/send_briefing.py
